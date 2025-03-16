@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FFB800">
+    <title>AI 與我說餓了 - 賽博朋克互動小說</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FFB800;
+            --secondary-color: #9B4DCA;
+            --bg-color: #0A0A0A;
+            --text-color: #FFB800;
+            --grid-color: rgba(255, 184, 0, 0.1);
+            --glow-color: rgba(255, 184, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Noto Sans TC', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 網格背景效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(30px); }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 20px var(--glow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 故事文本區域 */
+        .story-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border-left: 3px solid var(--primary-color);
+            position: relative;
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+
+        .story-text::before {
+            content: '> ';
+            color: var(--primary-color);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* 選項按鈕樣式 */
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .choice-btn {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+            padding: 1rem;
+            cursor: pointer;
+            font-family: 'Noto Sans TC', sans-serif;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .choice-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 184, 0, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .choice-btn:hover {
+            background: rgba(255, 184, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .choice-btn:hover::before {
+            left: 100%;
+        }
+
+        /* 費曼筆記本區域 */
+        .notebook {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(155, 77, 202, 0.1);
+            border-left: 3px solid var(--secondary-color);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .notebook-title {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 結局分析區域 */
+        .ending-analysis {
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 1px solid var(--secondary-color);
+            display: none;
+        }
+
+        .ending-analysis.visible {
+            display: block;
+            animation: fadeIn 1s ease;
+        }
+
+        .analysis-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-title {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 動畫效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        /* 故事標題 */
+        .title {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--glow-color);
+            animation: glitch 1s infinite;
+        }
+
+        /* 進度指示器 */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--primary-color);
+            box-shadow: 0 0 10px var(--glow-color);
+            transition: width 0.3s ease;
+        }
+
+        /* 音效控制按鈕 */
+        .sound-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            z-index: 1000;
+        }
+
+        .sound-control:hover {
+            background: rgba(255, 184, 0, 0.1);
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .start-content {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 20px var(--glow-color);
+        }
+
+        .subtitle {
+            color: var(--secondary-color);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 1rem 0 2rem;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .start-button {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 184, 0, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .start-button:hover {
+            background: rgba(255, 184, 0, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .start-button:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="start-screen">
+        <div class="start-content">
+            <h1 class="title">AI 與我說餓了</h1>
+            <p class="subtitle">賽博朋克互動小說</p>
+            <button id="start-button" class="start-button">開始體驗</button>
+        </div>
+    </div>
+    
+    <div id="game-container" class="game-container" style="display: none;">
+        <div class="progress-bar"></div>
+        <div class="container">
+            <h1 class="title">AI 與我說餓了</h1>
+            <div class="story-text"></div>
+            <div class="choices"></div>
+            <div class="notebook">
+                <div class="notebook-title">費曼筆記本</div>
+                <div class="notebook-content"></div>
+            </div>
+            <div class="ending-analysis">
+                <div class="analysis-section psychological">
+                    <div class="analysis-title">心理分析</div>
+                    <div class="analysis-content"></div>
+                </div>
+                <div class="analysis-section philosophical">
+                    <div class="analysis-title">哲學思考</div>
+                    <div class="analysis-content"></div>
+                </div>
+                <div class="analysis-section social">
+                    <div class="analysis-title">社會影響</div>
+                    <div class="analysis-content"></div>
+                </div>
+                <div class="analysis-section impact">
+                    <div class="analysis-title">影響評估</div>
+                    <div class="analysis-content"></div>
+                </div>
+            </div>
+        </div>
+        <button class="sound-control">音效: 開啟</button>
+    </div>
+
+    <script src="story.js"></script>
+    <script>
+        // 音效系統
+        const sounds = {
+            hover: new Audio('sounds/hover.mp3'),
+            click: new Audio('sounds/click.mp3'),
+            ambient: new Audio('sounds/ambient.mp3'),
+            ending: new Audio('sounds/ending.mp3')
+        };
+
+        // 預加載所有音效
+        Object.values(sounds).forEach(sound => {
+            sound.load();
+        });
+
+        // 設置環境音樂循環播放
+        sounds.ambient.loop = true;
+        let isSoundEnabled = true;
+
+        // 開始按鈕事件處理
+        document.getElementById('start-button').addEventListener('click', function() {
+            // 隱藏開始界面
+            document.getElementById('start-screen').style.display = 'none';
+            // 顯示遊戲界面
+            document.getElementById('game-container').style.display = 'block';
+            // 開始播放環境音樂
+            if (isSoundEnabled) {
+                sounds.ambient.play().catch(error => {
+                    console.log('Audio play failed:', error);
+                });
+            }
+            // 初始化遊戲
+            displayNode('start');
+        });
+
+        // 音效控制
+        document.querySelector('.sound-control').addEventListener('click', function() {
+            isSoundEnabled = !isSoundEnabled;
+            this.textContent = `音效: ${isSoundEnabled ? '開啟' : '關閉'}`;
+            if (isSoundEnabled) {
+                sounds.ambient.play().catch(error => {
+                    console.log('Audio play failed:', error);
+                });
+            } else {
+                sounds.ambient.pause();
+            }
+        });
+
+        // 添加滑鼠懸停音效到開始按鈕
+        document.getElementById('start-button').addEventListener('mouseover', () => {
+            playSound('hover');
+        });
+
+        let currentNode = 'start';
+        let notebookEntries = [];
+
+        function playSound(soundName) {
+            if (isSoundEnabled && sounds[soundName]) {
+                sounds[soundName].currentTime = 0;
+                sounds[soundName].play().catch(error => {
+                    console.log('Audio play failed:', error);
+                });
+            }
+        }
+
+        function updateProgress() {
+            // 假設總共有 4 個階段
+            const progress = (notebookEntries.length / 4) * 100;
+            document.querySelector('.progress-bar').style.width = `${progress}%`;
+        }
+
+        function displayNode(nodeId) {
+            const node = storyData[nodeId];
+            if (!node) return;
+
+            const storyText = document.querySelector('.story-text');
+            const choicesDiv = document.querySelector('.choices');
+            const notebookContent = document.querySelector('.notebook-content');
+
+            // 添加打字機效果
+            let text = node.text;
+            storyText.textContent = '';
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    storyText.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 30);
+                }
+            }
+            typeWriter();
+
+            // 清空並更新選項
+            choicesDiv.innerHTML = '';
+            if (node.choices && node.choices.length > 0) {
+                node.choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-btn';
+                    button.textContent = choice.text;
+                    button.addEventListener('mouseover', () => playSound('hover'));
+                    button.addEventListener('click', () => {
+                        playSound('click');
+                        if (choice.notebookEntry) {
+                            notebookEntries.push(choice.notebookEntry);
+                        }
+                        currentNode = choice.nextNode;
+                        displayNode(choice.nextNode);
+                        updateProgress();
+                    });
+                    choicesDiv.appendChild(button);
+                });
+            }
+
+            // 更新筆記本
+            notebookContent.textContent = node.notebook;
+
+            // 如果是結局，顯示分析
+            if (nodeId.startsWith('ending_')) {
+                playSound('ending');
+                const endingAnalysis = document.querySelector('.ending-analysis');
+                endingAnalysis.classList.add('visible');
+                
+                if (node.analysis) {
+                    document.querySelector('.psychological .analysis-content').textContent = node.analysis.psychological || '';
+                    document.querySelector('.philosophical .analysis-content').textContent = node.analysis.philosophical || '';
+                    document.querySelector('.social .analysis-content').textContent = node.analysis.social || '';
+                    
+                    const impactContent = document.querySelector('.impact .analysis-content');
+                    impactContent.innerHTML = '';
+                    if (node.analysis.impact) {
+                        Object.entries(node.analysis.impact).forEach(([key, value]) => {
+                            impactContent.innerHTML += `<p><strong>${key}:</strong> ${value}</p>`;
+                        });
+                    }
+                }
+            } else {
+                document.querySelector('.ending-analysis').classList.remove('visible');
+            }
+        }
+
+        // Service Worker 註冊
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html> 
